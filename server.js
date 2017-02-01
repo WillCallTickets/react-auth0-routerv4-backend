@@ -19,6 +19,7 @@ function validate(data){
 }
 
 app.get('/api/games', (req, res) => {
+  console.log('ROUTE GET /api/games');
   knex('games').then((games) => {
     console.log('GAMES', games);
     res.json({ games })
@@ -26,6 +27,8 @@ app.get('/api/games', (req, res) => {
 });
 
 app.post('/api/games', (req, res) => {
+  console.log('ROUTE POST /api/games');
+  
   const { errors, isValid } = validate(req.body);
   if(isValid){
     const { title, cover } = req.body;
