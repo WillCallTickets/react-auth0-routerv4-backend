@@ -16,22 +16,53 @@ function validate(data){
   return { errors, isValid };
 }
 
+router.use('*', (req,res,next) => {
+  console.log('ROUTER', req.params)
+  next();
+});
+
 router.get('/', (req, res) => {
-  // console.log('ROUTE GET /api/games');
+  console.log('ROUTE GET /api/games');
   knex('games').orderBy('id', 'asc').then((games) => {
     res.json({ games })
   });
 });
 
+router.post('/', (req, res) => {
+  console.log('ROUTE POST /api/games');
+  
+  // ALWAYS VALIDATE DATA ON SERVER - DON"T TRUST CLIENT
+  const { errors, isValid } = validate(req.body);
+  if(isValid){
+    const { title, cover } = req.body;
+    
+    knex('games')
+    .returning('id')
+    .insert({ title, cover })
+    .then((idx) => {
+      knex('games').where({id: parseInt(idx)}).first()
+      .then(game => {
+        res.json({ game: game });
+      })
+    })
+    .catch(err => {
+      res.status(500).json({ errors: { global: "Something went wrong here: " + err }});
+    });
+    
+  } else {
+    res.status(400).json({ errors });
+  }
+});
+
 router.get('/:id', (req, res) => {
-  // console.log('ROUTE GET by id /api/games/:id', req.params);
+  console.log('ROUTE GET by id /api/games/:id', req.params);
   knex('games').where({id: parseInt(req.params.id)}).first().then((game) => {
     res.json({ game });
   });
 });
 
 router.put('/:id', (req, res) => {
-  //console.log('ROUTE PUT /api/games', req.params);
+  console.log('ROUTE PUT /api/games', req.params);
   
   // ALWAYS VALIDATE DATA ON SERVER - DON"T TRUST CLIENT
   const { errors, isValid } = validate(req.body);
@@ -57,30 +88,11 @@ router.put('/:id', (req, res) => {
   }
 });
 
-router.post('/', (req, res) => {
-  // console.log('ROUTE POST /api/games');
-  
-  // ALWAYS VALIDATE DATA ON SERVER - DON"T TRUST CLIENT
-  const { errors, isValid } = validate(req.body);
-  if(isValid){
-    const { title, cover } = req.body;
-    
-    knex('games')
-    .returning('id')
-    .insert({ title, cover })
-    .then((idx) => {
-      knex('games').where({id: parseInt(idx)}).first()
-      .then(game => {
-        res.json({ game: game });
-      })
-    })
-    .catch(err => {
-      res.status(500).json({ errors: { global: "Something went wrong here: " + err }});
-    });
-    
-  } else {
-    res.status(400).json({ errors });
-  }
+router.delete('/:id', (req, res) => {
+  console.log('ROUTE DELETE by id /api/games/:id', req.params);
+  knex('games').where({id: parseInt(req.params.id, 10)}).del().then(() => {
+    res.json(req.params.id);
+  });
 });
 
 module.exports = router;
