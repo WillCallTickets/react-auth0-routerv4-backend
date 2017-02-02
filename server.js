@@ -9,48 +9,10 @@ const dbUrl = process.env.DATABASE_URL;
 const app = express();
 app.use(bodyParser.json());
 
-function validate(data){
-  let errors = {};
-  if(data.title === '') errors.title = "Can't be empty";
-  if(data.cover === '') errors.cover = "Can't be empty";
-  const isValid = Object.keys(errors).length === 0;
-  
-  return { errors, isValid };
-}
+// handle api requests for games
+const games = require('./routes/games');
+app.use('/api/games', games);
 
-app.get('/api/games', (req, res) => {
-  console.log('ROUTE GET /api/games');
-  knex('games').then((games) => {
-    console.log('GAMES', games);
-    res.json({ games })
-  });
-});
-
-app.post('/api/games', (req, res) => {
-  console.log('ROUTE POST /api/games');
-  
-  const { errors, isValid } = validate(req.body);
-  if(isValid){
-    const { title, cover } = req.body;
-    
-    knex('games')
-    .returning('id')
-    .insert({ title, cover })
-    .then((idx) => {
-      knex('games').where({id: parseInt(idx)}).first()
-      .then(r => {
-        console.log('RETURN', r)
-        res.json({ game: r })
-      })
-    })
-    .catch(err => {
-      res.status(500).json({ errors: { global: "Something went wrong here: " + err }});
-    });
-    
-  } else {
-    res.status(400).json({ errors });
-  }
-});
 
 // 404
 app.use((req, res) => {
